@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <!--
+    ============================================================================
+    刘智鹏 · 在线个人简历（多文件版）
+    ----------------------------------------------------------------------------
+    项目结构（职责分离）：
+      index.html     —— 语义化页面结构 + 元信息（SEO / OpenGraph / 主题色）
+      css/style.css  —— 设计令牌(CSS变量) → 基础重置 → 组件样式 → 响应式 → 打印
+      js/data.js     —— 简历内容数据（单一数据源，改内容只动这里）
+      js/main.js     —— 渲染函数 + 交互逻辑（主题/语言/滚动/灯箱/进度条等）
+      assets/img/    —— 头像、微信二维码、证书、生活照等图片资源
+
+    技术栈：纯原生 HTML + CSS + JavaScript，零外部依赖（图标均为内联 SVG）。
+    特性：响应式布局、深浅色主题切换、中英标签切换、打印/导出 PDF、
+          滚动进度条、数字滚动动画、技能条动画、图片灯箱、无障碍(ARIA)。
+
+    部署（加分项）：整体上传 GitHub Pages / Vercel / Netlify / Gitee Pages 即可，
+          或本地运行任意静态文件服务器（如 `npx serve`）后访问。
+    ============================================================================
+    -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="刘智鹏的个人简历网站 - 通信工程创新班 大一新生，涵盖教育背景、项目经历、AI 认证与校园实践">
+    <meta name="author" content="刘智鹏">
+    <meta name="keywords" content="刘智鹏,个人简历,通信工程,人工智能,校园销售,家教">
+    <meta name="theme-color" content="#2563eb">
+    <meta property="og:title" content="刘智鹏 · 个人简历">
+    <meta property="og:description" content="通信工程创新班 · 大一新生，AI 认证、校园实践、教学经历一页尽览">
+    <meta property="og:type" content="website">
+    <title>刘智鹏 · 个人简历</title>
+    <noscript>
+        <style>
+            /* 无 JS 环境下：取消入场动画的隐藏态，确保内容可见 */
+            .fade-in { opacity: 1 !important; transform: none !important; }
+            .skill-bar-fill { width: var(--target-width, 0%) !important; }
+        </style>
+    </noscript>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <!-- 顶部阅读进度条 -->
+    <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
+
+    <!-- 图片灯箱（点击证书/照片放大预览） -->
+    <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="图片预览">
+        <button class="lightbox-close" id="lightboxClose" aria-label="关闭预览">&times;</button>
+        <img class="lightbox-img" id="lightboxImg" alt="">
+    </div>
+
+    <!-- Toast 轻提示 -->
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <header class="navbar" id="navbar" role="navigation" aria-label="主导航">
+        <div class="container nav-inner">
+            <a href="#hero" class="brand" aria-label="返回顶部">刘智鹏</a>
+            <button class="nav-toggle" id="navToggle" aria-label="切换导航菜单" aria-expanded="false">
+                <svg viewBox="0 0 24 24"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
+            </button>
+            <ul class="nav-menu" id="navMenu" role="menubar">
+                <li role="none"><a href="#hero" role="menuitem">🏠 首页</a></li>
+                <li role="none"><a href="#highlights" role="menuitem">✨ 亮点</a></li>
+                <li role="none"><a href="#experience" role="menuitem">💼 经历</a></li>
+                <li role="none"><a href="#projects" role="menuitem">🚀 项目</a></li>
+                <li role="none"><a href="#skills" role="menuitem">🛠️ 技能</a></li>
+                <li role="none"><a href="#education" role="menuitem">🎓 教育</a></li>
+                <li role="none"><a href="#life" role="menuitem">🌅 生活</a></li>
+            </ul>
+            <div class="nav-actions">
+                <button class="icon-btn" id="langToggle" aria-label="切换语言" title="中英切换">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 4 5.5 4 9s-1.5 6.5-4 9c-2.5-2.5-4-5.5-4-9s1.5-6.5 4-9z"/></svg>
+                </button>
+                <button class="icon-btn" id="themeToggle" aria-label="切换深浅色模式" title="深浅色切换">
+                    <svg viewBox="0 0 24 24" id="themeIcon"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+                </button>
+                <button class="icon-btn print-btn" id="printBtn" aria-label="打印简历" title="打印 PDF">
+                    <svg viewBox="0 0 24 24"><path d="M6 9V3h12v6"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main id="main">
+        <section id="hero" class="section" aria-label="个人简介">
+            <div class="container hero-content">
+                <div class="hero-text fade-in">
+                    <h1>你好，我是<br><span class="gradient-text" id="heroName">刘智鹏</span></h1>
+                    <p class="hero-tagline" id="heroTagline">通信工程创新班 · 大一新生</p>
+                    <p class="hero-summary" id="heroSummary">18岁入选通信工程创新班，自驱力强、结果导向，兼具销售、教学与 AI 实战经验，正持续深耕人工智能与通信技术。</p>
+                    <div class="badges" id="heroBadges"></div>
+                    <div class="contact-btns" id="heroContactBtns"></div>
+                </div>
+                <div class="hero-side fade-in">
+                    <img src="assets/img/avatar.jpg" alt="刘智鹏头像" class="hero-avatar">
+                    <div class="hero-card" id="heroCardPhone">
+                        <div class="hero-card-label">📱 电话</div>
+                        <div class="hero-card-value">16670968176</div>
+                    </div>
+                    <div class="hero-card" id="heroCardWechat">
+                        <div class="hero-card-label">💬 微信</div>
+                        <div class="hero-card-value">liuzhipengha</div>
+                    </div>
+                    <div class="hero-card" id="heroCardLocation">
+                        <div class="hero-card-label">📍 学校</div>
+                        <div class="hero-card-value">长沙学院</div>
+                    </div>
+                    <div class="hero-card" id="heroCardEdu">
+                        <div class="hero-card-label">🎓 专业</div>
+                        <div class="hero-card-value">通信工程创新班</div>
+                    </div>
+                    <div class="hero-card" id="heroCardLang">
+                        <div class="hero-card-label">🌐 语言</div>
+                        <div class="hero-card-value">中文（母语）· 英语（高考140）</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="highlights" class="section" aria-label="亮点成果">
+            <div class="container">
+                <h2 class="section-title" id="highlightsTitle">✨ 亮点成果</h2>
+                <p class="section-subtitle" id="highlightsSubtitle">可量化的关键成绩</p>
+                <div class="highlights-grid" id="highlightsGrid"></div>
+            </div>
+        </section>
+
+        <section id="experience" class="section" aria-label="工作与实习经历">
+            <div class="container">
+                <h2 class="section-title" id="experienceTitle">💼 经历</h2>
+                <p class="section-subtitle" id="experienceSubtitle">工作 / 实习 / 校园</p>
+                <div class="tabs-container" id="experienceTabsContainer"></div>
+            </div>
+        </section>
+
+        <section id="projects" class="section" aria-label="项目">
+            <div class="container">
+                <h2 class="section-title" id="projectsTitle">🚀 项目</h2>
+                <p class="section-subtitle" id="projectsSubtitle">精选项目案例</p>
+                <div class="tabs-container" id="projectsTabsContainer"></div>
+            </div>
+        </section>
+
+        <section id="skills" class="section" aria-label="技能">
+            <div class="container">
+                <h2 class="section-title" id="skillsTitle">🛠️ 技能矩阵</h2>
+                <p class="section-subtitle" id="skillsSubtitle">语言 / 管理 / 销售 / 教学</p>
+                <div class="skills-grid" id="skillsGrid"></div>
+            </div>
+        </section>
+
+        <section id="education" class="section" aria-label="教育与证书">
+            <div class="container">
+                <h2 class="section-title" id="educationTitle">🎓 教育与证书</h2>
+                <div class="education-section" id="educationSection"></div>
+            </div>
+        </section>
+
+        <section id="life" class="section" aria-label="热爱生活">
+            <div class="container">
+                <h2 class="section-title" id="lifeTitle">🌅 热爱生活</h2>
+                <p class="section-subtitle" id="lifeSubtitle">热爱生活，大胆去爱</p>
+                <div class="life-section" id="lifeSection"></div>
+            </div>
+        </section>
+
+        <section id="contact" class="section contact-section" aria-label="联系我">
+            <div class="container">
+                <h2 class="section-title">💬 交个朋友</h2>
+                <div class="contact-wechat">
+                    <div class="wechat-left">
+                        <p class="wechat-quote">愿你成为自己的太阳，<br>无需凭借谁的光。</p>
+                        <div class="wechat-mascot" aria-hidden="true">
+                            <svg viewBox="0 0 120 130" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M60 24 q6 -12 12 -3" stroke="#4a3428" stroke-width="3" fill="none" stroke-linecap="round"/>
+                                <circle cx="60" cy="54" r="30" fill="#ffe6c7"/>
+                                <path d="M30 52 a30 30 0 0 1 60 0 q0 6 -6 6 q-6 -8 -14 -8 q-8 6 -20 6 q-12 0 -20 -4 z" fill="#4a3428"/>
+                                <circle cx="50" cy="56" r="4" fill="#2b1b12"/>
+                                <circle cx="70" cy="56" r="4" fill="#2b1b12"/>
+                                <circle cx="51.5" cy="54.5" r="1.5" fill="#fff"/>
+                                <circle cx="71.5" cy="54.5" r="1.5" fill="#fff"/>
+                                <ellipse cx="44" cy="65" rx="5.5" ry="3.5" fill="#ffb3c1" opacity="0.75"/>
+                                <ellipse cx="76" cy="65" rx="5.5" ry="3.5" fill="#ffb3c1" opacity="0.75"/>
+                                <path d="M52 67 q8 8 16 0" stroke="#2b1b12" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                                <path d="M60 84 q-17 0 -19 19 l-5 25 h48 l-5 -25 q-2 -19 -19 -19 z" fill="#5b8cff"/>
+                                <path d="M41 93 q-15 -2 -19 -13" stroke="#ffe6c7" stroke-width="6.5" fill="none" stroke-linecap="round"/>
+                                <path d="M79 93 L89 42" stroke="#ffe6c7" stroke-width="6.5" stroke-linecap="round"/>
+                                <rect x="74" y="22" width="44" height="24" rx="6" fill="#ffd93d" stroke="#f0a500" stroke-width="2"/>
+                                <text x="96" y="39" font-size="14" font-weight="700" fill="#8a5a00" text-anchor="middle" font-family="sans-serif">加油</text>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="wechat-qr">
+                        <img src="assets/img/wechat-qr.jpg" alt="微信二维码" loading="lazy">
+                        <span class="wechat-qr-hint">扫码加我微信</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+<footer class="footer" id="footer">
+        <div class="container">
+            <p id="footerText">© 2026 刘智鹏 · 个人简历 · 最后更新 2026年8月</p>
+            <p class="footer-note" id="footerNote">由纯 HTML/CSS/JS 构建 · 无需外部依赖</p>
+        </div>
+    </footer>
+
+    <button class="back-to-top" id="backToTop" aria-label="返回顶部">
+        <svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+    </button>
+
+    <script src="js/data.js"></script>
+    <script src="js/main.js"></script>
+
+</body>
+</html>
